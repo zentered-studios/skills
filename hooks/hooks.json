@@ -1,0 +1,17 @@
+{
+  "description": "deslop: flags AI-writing tells after the agent writes or edits a prose file (Claude Code Write/Edit, Codex apply_patch). Advisory: it never blocks the tool call; it returns the findings so the agent can rewrite before finishing.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/skills/deslop/scripts/check-ai-phrases.js\" --hook",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

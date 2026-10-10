@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "zentered-studios",
+  "description": "Public skills from Zentered Studios.",
+  "owner": {
+    "name": "Zentered Studios",
+    "url": "https://github.com/zentered-studios"
+  },
+  "plugins": [
+    {
+      "name": "zentered-studios",
+      "displayName": "Zentered Studios",
+      "source": "./",
+      "description": "Agent skills for writing: voice builds a voice.md from a person's own writing; deslop finds and cuts AI-writing tells."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "zentered-studios",
+  "version": "1.0.0",
+  "description": "Agent skills for writing: voice builds a voice.md from a person's own writing; deslop finds and cuts AI-writing tells.",
+  "author": {
+    "name": "Zentered Studios",
+    "url": "https://github.com/zentered-studios"
+  },
+  "homepage": "https://github.com/zentered-studios/skills",
+  "repository": "https://github.com/zentered-studios/skills",
+  "license": "MIT",
+  "keywords": ["writing", "voice", "style-guide", "ai-writing", "linter"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Zentered Studios",
+    "shortDescription": "Write in your own voice and cut AI-writing tells.",
+    "developerName": "Zentered Studios",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "defaultPrompt": [
+      "Help me write my voice.md",
+      "Check this draft for AI-writing tells"
+    ]
+  }
+}

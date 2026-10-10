@@ -1,0 +1,10 @@
+{
+  "name": "zentered-studios-skills",
+  "private": true,
+  "version": "1.0.0",
+  "license": "MIT",
+  "scripts": {
+    "check-ai-phrases": "node skills/deslop/scripts/check-ai-phrases.js",
+    "test": "node --test test/*.test.js"
+  }
+}
