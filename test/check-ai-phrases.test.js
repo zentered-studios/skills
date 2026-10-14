@@ -85,6 +85,12 @@ test("--file then bare path: exits 2", () => {
   assert.match(res.stderr, /Only one file per run/);
 });
 
+test("lone dash: reads stdin", () => {
+  const res = run(["-"], "We should leverage a robust solution.\n");
+  assert.equal(res.status, 1);
+  assert.match(res.stdout, /Found \d+ AI-writing tell/);
+});
+
 test("stdin mode: empty input exits 2, never reports OK", () => {
   const res = run([], "");
   assert.equal(res.status, 2);

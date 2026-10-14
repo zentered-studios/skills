@@ -96,6 +96,7 @@ function parseArgs(argv) {
     }
     else if (arg === "--hook") opts.hook = true;
     else if (arg === "--strict") opts.strict = true;
+    else if (arg === "-") continue; // read stdin
     else if (arg.startsWith("-")) opts.error = `Unknown option: ${arg}`;
     else if (opts.file === null) opts.file = arg;
     else opts.error = `Only one file per run: ${arg}`;
