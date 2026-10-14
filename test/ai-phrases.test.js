@@ -150,6 +150,13 @@ const EXTRA = [
   ["claude-bold-leadin", false, "1. **A:** a\n2. **B:** b\n3. plain\n4. **C:** c\n5. **D:** d"],
   ["claude-bold-leadin", true, "- **A:** a\n  - nested plain\n- **B:** b\n- **C:** c\n- **D:** d"],
   ["claude-bold-leadin", true, "- **A:** a\n  - **Nested:** nested\n  - nested plain\n- **B:** b\n- **C:** c\n- **D:** d"],
+  ["ai-leftovers", true, "See [the source](https://example.com/page?utm_source=chatgpt.com)."],
+  ["ai-leftovers", true, "Per [Grok](https://example.com/page?referrer=grok.com)."],
+  ["ai-leftovers", false, "See https://example.com/?referrer=grok.com.au"],
+  ["ai-leftovers", false, "See https://example.com/?referrer=grok.com-newsletter"],
+  ["ai-leftovers", false, "See https://example.com/?utm_source=openai-partners"],
+  ["ai-leftovers", true, "See https://example.com/?referrer=grok.com."],
+  ["ai-leftovers", false, "[Read the launch post](https://example.com/?utm_source=zentered-studios&utm_medium=post)"],
 ];
 for (const [id, shouldMatch, text] of EXTRA) {
   test(`${id}: extra case (${shouldMatch ? "hit" : "miss"}) ${JSON.stringify(text.slice(0, 30))}`, () => {

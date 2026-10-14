@@ -4,6 +4,7 @@
 // Three ways to run it:
 //   node check-ai-phrases.js < draft.md          scan stdin, human report, exit 1 if flagged
 //   node check-ai-phrases.js --file draft.md      scan a file, human report, exit 1 if flagged
+//   node check-ai-phrases.js draft.md             same as --file
 //   node check-ai-phrases.js --hook                PostToolUse hook mode (Claude Code, Codex; see below)
 //
 // --hook mode reads the hook's stdin JSON (session_id, tool_name, tool_input,
@@ -80,12 +81,25 @@ function checkFile(filePath) {
   }
 }
 
+const USAGE = "Usage: check-ai-phrases.js [--strict] [--file] <path>, or pipe text on stdin. Hook mode: --hook [--strict].";
+
+// A bare path is the file to scan. Before this, it was silently ignored and
+// the script read stdin instead: it waited forever on an open pipe, and
+// reported "OK" on an empty one without scanning the file.
 function parseArgs(argv) {
-  const opts = { file: null, hook: false, strict: false };
+  const opts = { file: null, hook: false, strict: false, error: null };
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === "--file") opts.file = argv[++i];
-    else if (argv[i] === "--hook") opts.hook = true;
-    else if (argv[i] === "--strict") opts.strict = true;
+    const arg = argv[i];
+    if (arg === "--file") {
+      if (opts.file !== null) opts.error = "Only one file per run: --file";
+      else opts.file = argv[++i] ?? null;
+    }
+    else if (arg === "--hook") opts.hook = true;
+    else if (arg === "--strict") opts.strict = true;
+    else if (arg === "-") continue; // read stdin
+    else if (arg.startsWith("-")) opts.error = `Unknown option: ${arg}`;
+    else if (opts.file === null) opts.file = arg;
+    else opts.error = `Only one file per run: ${arg}`;
   }
   return opts;
 }
@@ -174,6 +188,10 @@ function formatHumanReport(matches, source) {
 
 function main() {
   const opts = parseArgs(process.argv.slice(2));
+  if (opts.error) {
+    process.stderr.write(`${opts.error}\n${USAGE}\n`);
+    process.exit(2);
+  }
 
   if (opts.hook) {
     const stdinRaw = readStdin();
@@ -219,7 +237,16 @@ function main() {
   }
 
   // Non-hook mode: human/CI report.
+  if (!opts.file && process.stdin.isTTY) {
+    process.stderr.write(`${USAGE}\n`);
+    process.exit(2);
+  }
   const text = opts.file ? fs.readFileSync(opts.file, "utf8") : readStdin();
+  if (!opts.file && text.trim() === "") {
+    // An empty pipe is a caller mistake, not clean text. Never report it as OK.
+    process.stderr.write(`No input on stdin.\n${USAGE}\n`);
+    process.exit(2);
+  }
   const patternSet = opts.strict ? patterns.filter((p) => p.group === BANNED_GROUP) : patterns;
   const matches = scan(text, patternSet);
   console.log(formatHumanReport(matches, opts.file));

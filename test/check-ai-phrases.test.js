@@ -57,6 +57,47 @@ test("--file mode: reads from disk and reports the file name", () => {
   assert.match(res.stdout, new RegExp(`in ${f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
 });
 
+test("bare path: scans the file, same as --file", () => {
+  const f = tempFile("draft.md", "We should leverage a robust solution.\n");
+  const res = run([f]);
+  assert.equal(res.status, 1);
+  assert.match(res.stdout, /Found \d+ AI-writing tell/);
+});
+
+test("unknown option: exits 2 with usage instead of reading stdin", () => {
+  const res = run(["--fiel", "draft.md"], "We should leverage a robust solution.\n");
+  assert.equal(res.status, 2);
+  assert.match(res.stderr, /Unknown option: --fiel/);
+  assert.match(res.stderr, /Usage:/);
+});
+
+test("bare path then --file: exits 2, never drops the first file", () => {
+  const f = tempFile("draft.md", "We should leverage a robust solution.\n");
+  const res = run([f, "--file", f]);
+  assert.equal(res.status, 2);
+  assert.match(res.stderr, /Only one file per run/);
+});
+
+test("--file then bare path: exits 2", () => {
+  const f = tempFile("draft.md", "We should leverage a robust solution.\n");
+  const res = run(["--file", f, f]);
+  assert.equal(res.status, 2);
+  assert.match(res.stderr, /Only one file per run/);
+});
+
+test("lone dash: reads stdin", () => {
+  const res = run(["-"], "We should leverage a robust solution.\n");
+  assert.equal(res.status, 1);
+  assert.match(res.stdout, /Found \d+ AI-writing tell/);
+});
+
+test("stdin mode: empty input exits 2, never reports OK", () => {
+  const res = run([], "");
+  assert.equal(res.status, 2);
+  assert.match(res.stderr, /No input on stdin/);
+  assert.equal(res.stdout, "");
+});
+
 test("--strict (non-hook) mode: only checks the banned-word group", () => {
   const res = run(["--strict"], "It should be noted that this is robust.\n");
   // "it should be noted" is a Wikipedia-group tell, not a banned word;
