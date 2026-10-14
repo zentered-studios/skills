@@ -90,7 +90,10 @@ function parseArgs(argv) {
   const opts = { file: null, hook: false, strict: false, error: null };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg === "--file") opts.file = argv[++i] ?? null;
+    if (arg === "--file") {
+      if (opts.file !== null) opts.error = "Only one file per run: --file";
+      else opts.file = argv[++i] ?? null;
+    }
     else if (arg === "--hook") opts.hook = true;
     else if (arg === "--strict") opts.strict = true;
     else if (arg.startsWith("-")) opts.error = `Unknown option: ${arg}`;

@@ -71,6 +71,20 @@ test("unknown option: exits 2 with usage instead of reading stdin", () => {
   assert.match(res.stderr, /Usage:/);
 });
 
+test("bare path then --file: exits 2, never drops the first file", () => {
+  const f = tempFile("draft.md", "We should leverage a robust solution.\n");
+  const res = run([f, "--file", f]);
+  assert.equal(res.status, 2);
+  assert.match(res.stderr, /Only one file per run/);
+});
+
+test("--file then bare path: exits 2", () => {
+  const f = tempFile("draft.md", "We should leverage a robust solution.\n");
+  const res = run(["--file", f, f]);
+  assert.equal(res.status, 2);
+  assert.match(res.stderr, /Only one file per run/);
+});
+
 test("stdin mode: empty input exits 2, never reports OK", () => {
   const res = run([], "");
   assert.equal(res.status, 2);
