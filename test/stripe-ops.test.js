@@ -291,7 +291,7 @@ test("an API error body with exit 0 is unknown, and --profile limits the run", (
     "good /v1/balance": goodBalance,
     "good /v1/disputes": { error: { message: "Unrecognized request URL", type: "invalid_request_error" } },
   });
-  assert.equal(res.status, 0, res.stderr);
+  assert.equal(res.status, 3, "an unknown check is not a clean run");
   const out = JSON.parse(res.stdout);
   assert.deepEqual(out.results.map((r) => r.profile), ["good"]);
   assert.deepEqual(out.results[0].unknown, [{ check: "disputes", reason: "Unrecognized request URL" }]);

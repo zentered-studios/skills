@@ -32,8 +32,10 @@ machine-readable output, `--config <path>` reads another CLI config. The
 script passes that path to every `stripe` call, so profiles and
 credentials come from the same file.
 
-Exit code 0 means no errors and 1 means at least one error. Exit code 2
-means it could not start, and stderr says why.
+Exit code 0 means no errors and every check ran. Exit code 1 means at
+least one error. Exit code 3 means no errors, but at least one check could
+not run, so the report is incomplete. Exit code 2 means it could not
+start, and stderr says why.
 
 Use the script rather than calling `stripe` yourself. It does the parts
 that are easy to get wrong by hand:

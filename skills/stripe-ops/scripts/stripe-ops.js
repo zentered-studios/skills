@@ -16,8 +16,9 @@
 // unknown, never ok. Findings carry object ids and counts, never customer
 // names, emails or card details.
 //
-// Exit codes: 0 no errors, 1 at least one error, 2 usage error or no
-// profiles found.
+// Exit codes: 0 no errors and every check ran, 1 at least one error, 2
+// usage error or no profiles found, 3 no errors but at least one check
+// could not run (unknown).
 //
 // STRIPE_BIN overrides the stripe binary (tests use a fake).
 
@@ -413,7 +414,9 @@ async function main() {
   const date = new Date(now * 1000).toISOString().slice(0, 10);
   if (opts.json) process.stdout.write(JSON.stringify({ date, hours: opts.hours, results }, null, 2) + "\n");
   else process.stdout.write(render(results, { date, hours: opts.hours }));
-  process.exit(results.some((r) => r.findings.some((f) => f.severity === "error")) ? 1 : 0);
+  const hasError = results.some((r) => r.findings.some((f) => f.severity === "error"));
+  const hasUnknown = results.some((r) => r.unknown.length);
+  process.exit(hasError ? 1 : hasUnknown ? 3 : 0);
 }
 
 if (require.main === module) main();
