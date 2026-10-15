@@ -215,14 +215,16 @@ function evaluate(profile, snap, now, hours) {
   // Disputes: open ones need evidence before due_by or they are lost.
   if (snap.disputes.error) unknown("disputes", snap.disputes);
   else {
-    const open = listOf(snap.disputes)
+    const disputes = listOf(snap.disputes);
+    const dueBy = (d) => (d.evidence_details || {}).due_by;
+    const open = disputes
       .filter((d) => OPEN_DISPUTE.has(d.status))
-      .sort((a, b) => ((a.evidence_details || {}).due_by || 0) - ((b.evidence_details || {}).due_by || 0));
+      .sort((a, b) => (dueBy(a) || 0) - (dueBy(b) || 0));
     for (const d of open) {
-      const due = (d.evidence_details || {}).due_by;
+      const due = dueBy(d);
       add("error", "disputes", `${d.id} ${d.status} ${money(d.amount, d.currency)}${due ? `, evidence due ${day(due)}` : ""}`);
     }
-    const review = listOf(snap.disputes).filter((d) => REVIEW_DISPUTE.has(d.status)).length;
+    const review = disputes.filter((d) => REVIEW_DISPUTE.has(d.status)).length;
     if (review) add("info", "disputes", `${review} under review`);
   }
 
