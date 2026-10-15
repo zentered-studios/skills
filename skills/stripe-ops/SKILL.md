@@ -38,6 +38,10 @@ that are easy to get wrong by hand:
 
 - It passes `--live` on every call. Without it the CLI refuses to run or
   reads a sandbox, and a check of test data looks clean.
+- It removes `STRIPE_API_KEY` from the environment of each call. The CLI
+  prefers that key over the profile, so an inherited test key would
+  report test data under a live profile. It also flags a balance with
+  `livemode: false`.
 - It checks that the account the API returns matches the profile's
   `account_id`. Stripe CLI before 1.53.1 ignored `--project-name` and
   read the active account instead, which would put one account's numbers

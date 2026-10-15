@@ -71,11 +71,14 @@ function defaultConfigPath() {
 function stripeGet(profile, apiPath, params = {}) {
   const args = ["get", apiPath, "--live", "--project-name", profile];
   for (const [k, v] of Object.entries(params)) args.push("-d", `${k}=${v}`);
+  // STRIPE_API_KEY beats the profile's credentials in the CLI, so an
+  // inherited test key would answer --live calls with test data.
+  const { STRIPE_API_KEY, ...env } = process.env;
   return new Promise((resolve) => {
     execFile(
       process.env.STRIPE_BIN || "stripe",
       args,
-      { timeout: 30000, maxBuffer: 64 * 1024 * 1024 },
+      { timeout: 30000, maxBuffer: 64 * 1024 * 1024, env },
       (err, stdout, stderr) => {
         // The CLI prints its "Running in" banner on stderr; strip it.
         const why = String(stderr || "").replace(/^.*Running in.*$/gm, "").trim();
@@ -204,7 +207,9 @@ function evaluate(profile, snap, now, hours) {
 
   // Balance.
   if (snap.balance.error) unknown("balance", snap.balance);
-  else {
+  else if (snap.balance.body.livemode === false) {
+    add("error", "access", "profile returned test mode data; skipped the balance");
+  } else {
     const b = snap.balance.body;
     for (const x of [...b.available, ...b.pending])
       if (x.amount < 0) add("warning", "balance", `negative balance ${money(x.amount, x.currency)}`);

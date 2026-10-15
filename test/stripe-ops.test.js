@@ -181,6 +181,13 @@ test("a failed read is unknown, not ok", () => {
   assert.match(render([r], { date: "2027-01-15", hours: 24 }), /Unknown:\n- disputes: rate limited/);
 });
 
+test("test mode balance is an error, not a clean report", () => {
+  const snap = cleanSnapshot();
+  snap.balance.body.livemode = false;
+  const r = evaluate(PROFILE, snap, NOW, 24);
+  assert.deepEqual(severities(r), ["error:access"]);
+});
+
 test("zero-decimal currencies are not divided by 100", () => {
   const snap = cleanSnapshot();
   snap.balance.body.available = [{ amount: 5000, currency: "jpy" }];
@@ -201,6 +208,7 @@ fs.writeFileSync(
   `#!/usr/bin/env node
 const args = process.argv.slice(2);
 const map = JSON.parse(require("fs").readFileSync(process.env.FAKE_STRIPE_MAP, "utf8"));
+if (process.env.STRIPE_API_KEY) { process.stderr.write("STRIPE_API_KEY leaked"); process.exit(1); }
 if (!args.includes("--live")) { process.stderr.write("You're in live mode. Add --live"); process.exit(1); }
 const profile = args[args.indexOf("--project-name") + 1];
 process.stderr.write("\\n▸ Running in fake · live\\n");
@@ -220,7 +228,7 @@ function cli(args, map) {
   fs.writeFileSync(mapFile, JSON.stringify(map));
   return spawnSync(process.execPath, [SCRIPT, "--config", CONFIG, ...args], {
     encoding: "utf8",
-    env: { ...process.env, STRIPE_BIN: FAKE, FAKE_STRIPE_MAP: mapFile },
+    env: { ...process.env, STRIPE_API_KEY: "sk_test_fake", STRIPE_BIN: FAKE, FAKE_STRIPE_MAP: mapFile },
   });
 }
 
