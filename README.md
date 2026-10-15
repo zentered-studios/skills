@@ -1,7 +1,7 @@
 # Zentered Studios skills
 
-Agent skills for writing, in the [Agent Skills](https://agentskills.io)
-format. They work in Claude Code, Codex and Gemini CLI, and in any agent
+Agent skills for writing and operations, in the
+[Agent Skills](https://agentskills.io) format. They work in Claude Code, Codex and Gemini CLI, and in any agent
 that reads `skills/<name>/SKILL.md`.
 
 ## Skills
@@ -33,6 +33,26 @@ rewrite.
 node skills/deslop/scripts/check-ai-phrases.js --file draft.md
 ```
 
+### stripe-ops
+
+A daily read-only check of every Stripe account the Stripe CLI is logged
+in to. It reports errors (disputes waiting for evidence, failed payouts,
+disabled accounts, past-due requirements, unpaid subscriptions, expired
+keys), warnings (failed charges and invoices, early fraud warnings,
+undelivered webhooks, late payouts) and a short overview (balance, volume,
+next payout). A check that could not run is reported as unknown, never as
+fine.
+
+It only calls `stripe get ... --live`. It needs the
+[Stripe CLI](https://docs.stripe.com/stripe-cli) 1.53.1 or newer, logged
+in once per account with `stripe login --project-name <name>`.
+
+```
+node skills/stripe-ops/scripts/stripe-ops.js
+```
+
+Start it with "check all my Stripe accounts".
+
 ## Install
 
 Claude Code:
@@ -57,11 +77,12 @@ Gemini CLI:
 ```
 gemini skills install https://github.com/zentered-studios/skills.git --path skills/voice
 gemini skills install https://github.com/zentered-studios/skills.git --path skills/deslop
+gemini skills install https://github.com/zentered-studios/skills.git --path skills/stripe-ops
 ```
 
 Gemini gets the skills without the hook.
 
-Other agents: copy `skills/voice/` or `skills/deslop/` into the agent's
+Other agents: copy a folder such as `skills/deslop/` into the agent's
 skills directory (often `.agents/skills/`).
 
 ## Development
@@ -69,7 +90,7 @@ skills directory (often `.agents/skills/`).
 Node 20 or newer. No dependencies.
 
 ```
-npm test                    # checker, hook and manifest tests
+npm test                    # checker, hook, stripe-ops and manifest tests
 claude plugin validate .    # Claude Code plugin and marketplace manifests
 claude plugin eval . --allow-tools "Bash(node *)" Write
 ```
