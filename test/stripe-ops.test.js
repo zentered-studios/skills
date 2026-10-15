@@ -106,6 +106,11 @@ test("parseProfiles reads the version 2 layout", () => {
   ]);
 });
 
+test("a legacy profile named profiles is kept, an empty v2 namespace is not", () => {
+  assert.deepEqual(parseProfiles("[profiles]\naccount_id = 'acct_p'\n"), [{ name: "profiles", accountId: "acct_p" }]);
+  assert.deepEqual(parseProfiles("config_version = 2\n[profiles]\n[profiles.shop]\naccount_id = 'acct_s'\n").map((p) => p.name), ["shop"]);
+});
+
 test("parseProfiles reads mixed layouts and prefers version 2 for a shared name", () => {
   const toml = [
     "[shop]",

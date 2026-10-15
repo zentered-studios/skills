@@ -96,7 +96,7 @@ function parseProfiles(toml) {
     if (line.startsWith("[")) {
       const keys = headerKeys(line);
       const v2 = keys && keys.length === 2 && keys[0] === "profiles";
-      const name = v2 ? keys[1] : keys && keys.length === 1 && keys[0] !== "profiles" ? keys[0] : null;
+      const name = v2 ? keys[1] : keys && keys.length === 1 ? keys[0] : null;
       current = name === null ? null : { name };
       if (current && (v2 || !found.has(name))) found.set(name, { profile: current, v2 });
       continue;
