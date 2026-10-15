@@ -68,6 +68,11 @@ test("parseProfiles keeps sections with an account_id", () => {
   ]);
 });
 
+test("parseProfiles decodes quoted profile names", () => {
+  const toml = ['["shop front"]', "account_id = 'acct_a'", "['lit']", "account_id = 'acct_b'", '["we\\"ird"]', "account_id = 'acct_c'"].join("\n");
+  assert.deepEqual(parseProfiles(toml).map((p) => p.name), ["shop front", "lit", 'we"ird']);
+});
+
 test("parseArgs rejects bad input", () => {
   assert.deepEqual(parseArgs(["--profile", "a", "--profile", "b", "--hours", "48", "--json"]), {
     profiles: ["a", "b"],

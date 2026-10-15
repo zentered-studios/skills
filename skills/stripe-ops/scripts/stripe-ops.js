@@ -40,6 +40,13 @@ const DAY = 86400;
 
 // --- config -----------------------------------------------------------------
 
+// A TOML table key is bare, "basic" (JSON-style escapes) or 'literal'.
+function tableKey(raw) {
+  if (raw.startsWith('"')) return JSON.parse(raw);
+  if (raw.startsWith("'")) return raw.slice(1, -1);
+  return raw;
+}
+
 // Reads the profile sections of a Stripe CLI config.toml. A section counts
 // as a profile only when it holds an account_id, which `stripe login` writes.
 function parseProfiles(toml) {
@@ -47,9 +54,9 @@ function parseProfiles(toml) {
   let current = null;
   for (const raw of toml.split(/\r?\n/)) {
     const line = raw.trim();
-    const section = line.match(/^\[([^\].]+)\]$/);
+    const section = line.match(/^\[\s*("(?:[^"\\]|\\.)*"|'[^']*'|[^\]."']+?)\s*\]$/);
     if (section) {
-      current = { name: section[1].trim() };
+      current = { name: tableKey(section[1]) };
       profiles.push(current);
       continue;
     }
