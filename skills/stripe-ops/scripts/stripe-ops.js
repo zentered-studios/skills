@@ -304,9 +304,11 @@ function evaluate(profile, snap, now, hours) {
     const enabled = eps.filter((w) => w.status === "enabled");
     for (const w of eps.filter((w) => w.status === "disabled"))
       add("info", "webhooks", `${w.id} is disabled (${w.url})`);
-    if (enabled.length && !enabled.some((w) => w.enabled_events.some((e) => DISPUTE_EVENTS.has(e)))) {
-      const ids = enabled.map((w) => w.id).join(", ");
-      add("warning", "webhooks", `no enabled endpoint receives charge.dispute.created (enabled: ${ids}); add the event to one`);
+    if (!enabled.some((w) => w.enabled_events.some((e) => DISPUTE_EVENTS.has(e)))) {
+      const fix = enabled.length
+        ? `(enabled: ${enabled.map((w) => w.id).join(", ")}); add the event to one`
+        : "(no enabled endpoint); add one";
+      add("warning", "webhooks", `no enabled endpoint receives charge.dispute.created ${fix}`);
     }
   }
 

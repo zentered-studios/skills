@@ -169,6 +169,19 @@ test("warnings: failed charges per customer, stuck webhooks, late payouts, actio
   assert.ok(r.findings.some((f) => f.severity === "info" && f.message.startsWith("we_off is disabled")));
 });
 
+test("no enabled webhook endpoint still warns about disputes", () => {
+  const none = cleanSnapshot();
+  none.webhooks = list([]);
+  const off = cleanSnapshot();
+  off.webhooks = list([{ id: "we_off", status: "disabled", url: "https://example.test/b", enabled_events: ["*"] }]);
+  for (const snap of [none, off]) {
+    const r = evaluate(PROFILE, snap, NOW, 24);
+    assert.ok(
+      r.findings.some((f) => f.severity === "warning" && f.message === "no enabled endpoint receives charge.dispute.created (no enabled endpoint); add one")
+    );
+  }
+});
+
 test("a failed read is unknown, not ok", () => {
   const snap = cleanSnapshot();
   snap.disputes = { error: "rate limited" };
