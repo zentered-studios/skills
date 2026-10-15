@@ -77,7 +77,9 @@ Rules for the report:
 
 When no profile is logged in, tell the user to run `stripe login` for each
 account, with `--project-name <name>` for every account after the first.
-The script reads profiles from `~/.config/stripe/config.toml`.
+The script reads profiles from `~/.config/stripe/config.toml`. It reads both
+layouts: `[name]` tables and the `config_version = 2` form
+`[profiles.name]`. When both list one name, the version 2 table wins.
 
 ## What each finding means
 

@@ -65,28 +65,46 @@ function tableKey(raw) {
   return bad ? null : key;
 }
 
-// Reads the profile sections of a Stripe CLI config.toml. A section counts
-// as a profile only when it holds an account_id, which `stripe login` writes.
+// Splits a table header like `[profiles."shop front"]` into decoded keys.
+// Returns null for anything that is not a plain table header.
+function headerKeys(line) {
+  const body = line.match(/^\[(.*)\]$/);
+  if (!body) return null;
+  const part = /\s*("(?:[^"\\]|\\.)*"|'[^']*'|[^\s."'\[\]]+)\s*(\.|$)/y;
+  const keys = [];
+  let end;
+  do {
+    const m = part.exec(body[1]);
+    if (!m) return null;
+    const key = tableKey(m[1]);
+    if (key === null) return null;
+    keys.push(key);
+    end = m[2] === "";
+  } while (!end);
+  return keys;
+}
+
+// Reads the profile tables of a Stripe CLI config.toml. Two layouts exist:
+// legacy `[name]` and version 2 `[profiles.name]`. A table counts as a
+// profile only when it holds an account_id, which `stripe login` writes.
+// When both layouts list one name, the version 2 table wins.
 function parseProfiles(toml) {
-  const profiles = [];
+  const found = new Map();
   let current = null;
   for (const raw of toml.split(/\r?\n/)) {
     const line = raw.trim();
-    const section = line.match(/^\[\s*("(?:[^"\\]|\\.)*"|'[^']*'|[^\]."']+?)\s*\]$/);
-    if (section) {
-      const name = tableKey(section[1]);
-      current = name === null ? null : { name };
-      if (current) profiles.push(current);
-      continue;
-    }
     if (line.startsWith("[")) {
-      current = null;
+      const keys = headerKeys(line);
+      const v2 = keys && keys.length === 2 && keys[0] === "profiles";
+      const name = v2 ? keys[1] : keys && keys.length === 1 && keys[0] !== "profiles" ? keys[0] : null;
+      current = name === null ? null : { name };
+      if (current && (v2 || !found.has(name))) found.set(name, { profile: current, v2 });
       continue;
     }
     const kv = current && line.match(/^(account_id|display_name)\s*=\s*['"]([^'"]*)['"]/);
     if (kv) current[kv[1] === "account_id" ? "accountId" : "displayName"] = kv[2];
   }
-  return profiles.filter((p) => p.accountId);
+  return [...found.values()].map((f) => f.profile).filter((p) => p.accountId);
 }
 
 function defaultConfigPath() {

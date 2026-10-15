@@ -86,6 +86,43 @@ test("a quoted name with a TOML unicode escape or a bad escape does not hide oth
   assert.deepEqual(names, ["default", "card\u{1F4B3} \u00e9\t"]);
 });
 
+test("parseProfiles reads the version 2 layout", () => {
+  const toml = [
+    "config_version = 2",
+    "[profiles]",
+    "[profiles.shop]",
+    "account_id = 'acct_shop'",
+    "display_name = 'Shop'",
+    '[profiles."front desk"]',
+    "account_id = 'acct_front'",
+    "[profiles.shop.extra]",
+    "account_id = 'acct_nested'",
+    "[profiles.empty]",
+    "device_name = 'x'",
+  ].join("\n");
+  assert.deepEqual(parseProfiles(toml), [
+    { name: "shop", accountId: "acct_shop", displayName: "Shop" },
+    { name: "front desk", accountId: "acct_front" },
+  ]);
+});
+
+test("parseProfiles reads mixed layouts and prefers version 2 for a shared name", () => {
+  const toml = [
+    "[shop]",
+    "account_id = 'acct_old'",
+    "[legacy]",
+    "account_id = 'acct_legacy'",
+    "[profiles.shop]",
+    "account_id = 'acct_new'",
+  ].join("\n");
+  assert.deepEqual(parseProfiles(toml), [
+    { name: "shop", accountId: "acct_new" },
+    { name: "legacy", accountId: "acct_legacy" },
+  ]);
+  const reversed = ["[profiles.shop]", "account_id = 'acct_new'", "[shop]", "account_id = 'acct_old'"].join("\n");
+  assert.deepEqual(parseProfiles(reversed), [{ name: "shop", accountId: "acct_new" }]);
+});
+
 test("parseArgs rejects bad input", () => {
   assert.deepEqual(parseArgs(["--profile", "a", "--profile", "b", "--hours", "48", "--json"]), {
     profiles: ["a", "b"],
