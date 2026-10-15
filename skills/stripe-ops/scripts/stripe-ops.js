@@ -70,8 +70,10 @@ function defaultConfigPath() {
 
 // --- fetching ---------------------------------------------------------------
 
-function stripeGet(profile, apiPath, params = {}) {
-  const args = ["get", apiPath, "--live", "--project-name", profile];
+// target is { profile, config }: the profile name and the config file the
+// CLI must read it from.
+function stripeGet(target, apiPath, params = {}) {
+  const args = ["get", apiPath, "--live", "--project-name", target.profile, "--config", target.config];
   for (const [k, v] of Object.entries(params)) args.push("-d", `${k}=${v}`);
   // STRIPE_API_KEY beats the profile's credentials in the CLI, so an
   // inherited test key would answer --live calls with test data.
@@ -101,11 +103,11 @@ function stripeGet(profile, apiPath, params = {}) {
 }
 
 // Follows has_more up to MAX_PAGES pages and says when it stopped early.
-async function stripeList(profile, apiPath, params = {}) {
+async function stripeList(target, apiPath, params = {}) {
   const data = [];
   let after;
   for (let page = 0; page < MAX_PAGES; page++) {
-    const res = await stripeGet(profile, apiPath, {
+    const res = await stripeGet(target, apiPath, {
       limit: 100,
       ...params,
       ...(after ? { starting_after: after } : {}),
@@ -118,21 +120,22 @@ async function stripeList(profile, apiPath, params = {}) {
   return { data, truncated: true };
 }
 
-async function collect(profile, now, hours) {
+async function collect(profile, config, now, hours) {
+  const target = { profile: profile.name, config };
   const since = now - hours * HOUR;
-  const account = await stripeGet(profile.name, "/v1/account");
+  const account = await stripeGet(target, "/v1/account");
   if (account.error) return { account };
   const [balance, disputes, efw, payouts, charges, events, pastDue, unpaid, webhooks] =
     await Promise.all([
-      stripeGet(profile.name, "/v1/balance"),
-      stripeGet(profile.name, "/v1/disputes", { limit: 100 }),
-      stripeGet(profile.name, "/v1/radar/early_fraud_warnings", { limit: 100 }),
-      stripeGet(profile.name, "/v1/payouts", { limit: 20 }),
-      stripeList(profile.name, "/v1/charges", { "created[gte]": since }),
-      stripeList(profile.name, "/v1/events", { "created[gte]": since }),
-      stripeGet(profile.name, "/v1/subscriptions", { status: "past_due", limit: 100 }),
-      stripeGet(profile.name, "/v1/subscriptions", { status: "unpaid", limit: 100 }),
-      stripeGet(profile.name, "/v1/webhook_endpoints", { limit: 100 }),
+      stripeGet(target, "/v1/balance"),
+      stripeGet(target, "/v1/disputes", { limit: 100 }),
+      stripeGet(target, "/v1/radar/early_fraud_warnings", { limit: 100 }),
+      stripeGet(target, "/v1/payouts", { limit: 20 }),
+      stripeList(target, "/v1/charges", { "created[gte]": since }),
+      stripeList(target, "/v1/events", { "created[gte]": since }),
+      stripeGet(target, "/v1/subscriptions", { status: "past_due", limit: 100 }),
+      stripeGet(target, "/v1/subscriptions", { status: "unpaid", limit: 100 }),
+      stripeGet(target, "/v1/webhook_endpoints", { limit: 100 }),
     ]);
   return { account, balance, disputes, efw, payouts, charges, events, pastDue, unpaid, webhooks };
 }
@@ -356,7 +359,10 @@ function parseArgs(argv) {
     if (a === "--json") opts.json = true;
     else if (a === "--profile") opts.profiles.push(argv[++i]);
     else if (a === "--hours") opts.hours = Number(argv[++i]);
-    else if (a === "--config") opts.config = argv[++i];
+    else if (a === "--config") {
+      opts.config = argv[++i];
+      if (!opts.config) throw new Error("--config needs a path");
+    }
     else throw new Error(`unknown argument ${a}`);
   }
   if (!(opts.hours > 0)) throw new Error("--hours needs a positive number");
@@ -395,7 +401,7 @@ async function main() {
 
   const now = Math.floor(Date.now() / 1000);
   const results = [];
-  for (const p of profiles) results.push(evaluate(p, await collect(p, now, opts.hours), now, opts.hours));
+  for (const p of profiles) results.push(evaluate(p, await collect(p, configPath, now, opts.hours), now, opts.hours));
 
   const date = new Date(now * 1000).toISOString().slice(0, 10);
   if (opts.json) process.stdout.write(JSON.stringify({ date, hours: opts.hours, results }, null, 2) + "\n");

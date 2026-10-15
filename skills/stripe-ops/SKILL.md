@@ -28,7 +28,9 @@ node <skill dir>/scripts/stripe-ops.js
 
 Options: `--profile <name>` (repeatable) limits the run to some profiles,
 `--hours <n>` changes the look-back window from 24 hours, `--json` gives
-machine-readable output, `--config <path>` reads another CLI config.
+machine-readable output, `--config <path>` reads another CLI config. The
+script passes that path to every `stripe` call, so profiles and
+credentials come from the same file.
 
 Exit code 0 means no errors and 1 means at least one error. Exit code 2
 means it could not start, and stderr says why.

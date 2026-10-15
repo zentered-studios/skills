@@ -77,6 +77,7 @@ test("parseArgs rejects bad input", () => {
   });
   assert.throws(() => parseArgs(["--hours", "0"]), /positive/);
   assert.throws(() => parseArgs(["--profile"]), /needs a name/);
+  assert.throws(() => parseArgs(["--config"]), /needs a path/);
   assert.throws(() => parseArgs(["--write"]), /unknown argument/);
 });
 
@@ -234,6 +235,7 @@ const map = JSON.parse(require("fs").readFileSync(process.env.FAKE_STRIPE_MAP, "
 if (process.env.STRIPE_API_KEY) { process.stderr.write("STRIPE_API_KEY leaked"); process.exit(1); }
 if (!args.includes("--live")) { process.stderr.write("You're in live mode. Add --live"); process.exit(1); }
 const profile = args[args.indexOf("--project-name") + 1];
+if (process.env.FAKE_STRIPE_LOG) require("fs").appendFileSync(process.env.FAKE_STRIPE_LOG, JSON.stringify(args) + "\\n");
 process.stderr.write("\\n▸ Running in fake · live\\n");
 const hit = map[profile + " " + args[1]] ?? map[profile + " *"];
 if (!hit) { process.stdout.write(JSON.stringify({ object: "list", data: [], has_more: false })); process.exit(0); }
@@ -246,12 +248,14 @@ fs.chmodSync(FAKE, 0o755);
 const CONFIG = path.join(FIXTURES, "config.toml");
 fs.writeFileSync(CONFIG, "[good]\naccount_id = 'acct_good'\ndisplay_name = 'Good'\n[broken]\naccount_id = 'acct_broken'\n");
 
+const LOG = path.join(FIXTURES, "calls.log");
+
 function cli(args, map) {
   const mapFile = path.join(FIXTURES, `map-${Math.random().toString(36).slice(2)}.json`);
   fs.writeFileSync(mapFile, JSON.stringify(map));
   return spawnSync(process.execPath, [SCRIPT, "--config", CONFIG, ...args], {
     encoding: "utf8",
-    env: { ...process.env, STRIPE_API_KEY: "sk_test_fake", STRIPE_BIN: FAKE, FAKE_STRIPE_MAP: mapFile },
+    env: { ...process.env, FAKE_STRIPE_LOG: LOG, STRIPE_API_KEY: "sk_test_fake", STRIPE_BIN: FAKE, FAKE_STRIPE_MAP: mapFile },
   });
 }
 
@@ -286,6 +290,14 @@ test("an API error body with exit 0 is unknown, and --profile limits the run", (
   const out = JSON.parse(res.stdout);
   assert.deepEqual(out.results.map((r) => r.profile), ["good"]);
   assert.deepEqual(out.results[0].unknown, [{ check: "disputes", reason: "Unrecognized request URL" }]);
+});
+
+test("every stripe call reads the chosen config file", () => {
+  fs.rmSync(LOG, { force: true });
+  cli(["--profile", "good"], { "good /v1/account": goodAccount, "good /v1/balance": goodBalance });
+  const calls = fs.readFileSync(LOG, "utf8").trim().split("\n").map((l) => JSON.parse(l));
+  assert.ok(calls.length > 1);
+  for (const args of calls) assert.equal(args[args.indexOf("--config") + 1], CONFIG);
 });
 
 test("usage errors exit 2", () => {
