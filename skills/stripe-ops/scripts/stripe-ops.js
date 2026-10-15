@@ -41,11 +41,28 @@ const DAY = 86400;
 
 // --- config -----------------------------------------------------------------
 
-// A TOML table key is bare, "basic" (JSON-style escapes) or 'literal'.
+const TOML_ESCAPES = { b: "\b", t: "\t", n: "\n", f: "\f", r: "\r", e: "\x1b", '"': '"', "\\": "\\" };
+
+// A TOML table key is bare, "basic" (TOML escapes) or 'literal'. Returns
+// null for a basic string with an invalid escape, so one bad header never
+// hides the other profiles.
 function tableKey(raw) {
-  if (raw.startsWith('"')) return JSON.parse(raw);
   if (raw.startsWith("'")) return raw.slice(1, -1);
-  return raw;
+  if (!raw.startsWith('"')) return raw;
+  let bad = false;
+  const key = raw.slice(1, -1).replace(
+    /\\(?:([btnfre"\\])|x([0-9A-Fa-f]{2})|u([0-9A-Fa-f]{4})|U([0-9A-Fa-f]{8})|(.?))/g,
+    (_, simple, x, u, U) => {
+      if (simple) return TOML_ESCAPES[simple];
+      const cp = parseInt(x || u || U || "", 16);
+      if (Number.isNaN(cp) || cp > 0x10ffff || (cp >= 0xd800 && cp <= 0xdfff)) {
+        bad = true;
+        return "";
+      }
+      return String.fromCodePoint(cp);
+    }
+  );
+  return bad ? null : key;
 }
 
 // Reads the profile sections of a Stripe CLI config.toml. A section counts
@@ -57,8 +74,9 @@ function parseProfiles(toml) {
     const line = raw.trim();
     const section = line.match(/^\[\s*("(?:[^"\\]|\\.)*"|'[^']*'|[^\]."']+?)\s*\]$/);
     if (section) {
-      current = { name: tableKey(section[1]) };
-      profiles.push(current);
+      const name = tableKey(section[1]);
+      current = name === null ? null : { name };
+      if (current) profiles.push(current);
       continue;
     }
     if (line.startsWith("[")) {

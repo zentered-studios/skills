@@ -73,6 +73,19 @@ test("parseProfiles decodes quoted profile names", () => {
   assert.deepEqual(parseProfiles(toml).map((p) => p.name), ["shop front", "lit", 'we"ird']);
 });
 
+test("a quoted name with a TOML unicode escape or a bad escape does not hide other profiles", () => {
+  const toml = [
+    "[default]",
+    "account_id = 'acct_good'",
+    '["card\\U0001F4B3 \\u00e9\\t"]',
+    "account_id = 'acct_card'",
+    '["bad\\q"]',
+    "account_id = 'acct_bad'",
+  ].join("\n");
+  const names = parseProfiles(toml).map((p) => p.name);
+  assert.deepEqual(names, ["default", "card\u{1F4B3} \u00e9\t"]);
+});
+
 test("parseArgs rejects bad input", () => {
   assert.deepEqual(parseArgs(["--profile", "a", "--profile", "b", "--hours", "48", "--json"]), {
     profiles: ["a", "b"],
@@ -303,6 +316,13 @@ test("every stripe call reads the chosen config file", () => {
   const calls = fs.readFileSync(LOG, "utf8").trim().split("\n").map((l) => JSON.parse(l));
   assert.ok(calls.length > 1);
   for (const args of calls) assert.equal(args[args.indexOf("--config") + 1], CONFIG);
+});
+
+test("--profile runs when another section has a TOML unicode escape", () => {
+  const cfg = path.join(FIXTURES, "escape.toml");
+  fs.writeFileSync(cfg, "[good]\naccount_id = 'acct_good'\n[\"card\\U0001F4B3\"]\naccount_id = 'acct_card'\n");
+  const res = cli(["--config", cfg, "--profile", "good"], { "good /v1/account": goodAccount, "good /v1/balance": goodBalance });
+  assert.equal(res.status, 0, res.stderr);
 });
 
 test("usage errors exit 2", () => {
