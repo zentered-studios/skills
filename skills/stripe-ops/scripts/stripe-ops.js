@@ -29,9 +29,11 @@ const { execFile } = require("child_process");
 const OPEN_DISPUTE = new Set(["needs_response", "warning_needs_response"]);
 const REVIEW_DISPUTE = new Set(["under_review", "warning_under_review"]);
 const DISPUTE_EVENTS = new Set(["*", "charge.dispute.created"]);
+// Stripe sends ugx (and isk) amounts times 100, so they stay two-decimal.
 const ZERO_DECIMAL = new Set(
-  "bif clp djf gnf jpy kmf krw mga pyg rwf ugx vnd vuv xaf xof xpf".split(" ")
+  "bif clp djf gnf jpy kmf krw mga pyg rwf vnd vuv xaf xof xpf".split(" ")
 );
+const THREE_DECIMAL = new Set("bhd jod kwd omr tnd".split(" "));
 const MAX_PAGES = 10;
 const HOUR = 3600;
 const DAY = 86400;
@@ -139,8 +141,8 @@ async function collect(profile, now, hours) {
 
 function money(amount, currency) {
   const c = String(currency).toLowerCase();
-  const value = ZERO_DECIMAL.has(c) ? amount : amount / 100;
-  return `${c.toUpperCase()} ${value.toFixed(ZERO_DECIMAL.has(c) ? 0 : 2)}`;
+  const digits = ZERO_DECIMAL.has(c) ? 0 : THREE_DECIMAL.has(c) ? 3 : 2;
+  return `${c.toUpperCase()} ${(amount / 10 ** digits).toFixed(digits)}`;
 }
 
 function sumBy(items, amountOf) {

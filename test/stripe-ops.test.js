@@ -195,6 +195,16 @@ test("zero-decimal currencies are not divided by 100", () => {
   assert.ok(r.overview.includes("balance available JPY 5000"));
 });
 
+test("ugx is two-decimal and three-decimal currencies divide by 1000", () => {
+  const snap = cleanSnapshot();
+  snap.balance.body.available = [
+    { amount: 500, currency: "ugx" },
+    { amount: 12345, currency: "kwd" },
+  ];
+  const r = evaluate(PROFILE, snap, NOW, 24);
+  assert.ok(r.overview.includes("balance available UGX 5.00, KWD 12.345"));
+});
+
 // --- CLI against a fake stripe binary ----------------------------------------
 
 const FIXTURES = fs.mkdtempSync(path.join(__dirname, ".fixtures-"));
