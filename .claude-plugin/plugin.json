@@ -1,7 +1,7 @@
 {
   "name": "zentered-studios",
   "displayName": "Zentered Studios",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Agent skills for writing and operations: voice builds a voice.md from a person's own writing; deslop finds and cuts AI-writing tells; stripe-ops runs a daily read-only check of every Stripe account.",
   "author": {
     "name": "Zentered Studios",
