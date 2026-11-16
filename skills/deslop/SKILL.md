@@ -63,6 +63,33 @@ blocking:
 - Rhetorical shape: stacked questions, echoing sentence openers, a colon
   into a list of three.
 
+## Titles, openers and batches
+
+The checker reads one file at a time and cannot see these. Check them by
+hand. They come from an owner review of a seven-post series and its seven
+social posts on 2026-11-16, not from a published study.
+
+- **Punchline title.** Two short sentences set against each other: "We
+  Planned Vectorize. Keyword Search Found 29 of 30." Write one plain
+  claim that names the problem or the result: "How Our Agents Find
+  Decisions We Already Made".
+- **Method title.** The title names the mechanism and the reader cannot
+  tell what it is for: "Issues Become Tasks: Every Field Is a Column".
+  Test the title and the description with one question: what is this for,
+  and what problem does it solve?
+- **Flat setup opener.** The first line defines its subject: "Cloudflare
+  Artifacts hosts Git repositories." Open on the event, the number or the
+  decision.
+- **Batch sameness.** Several pieces written together share one shape:
+  the same kind of opener, the same section order, the same closing
+  heading ("What we gave up" on three posts), the same sign-off ("Link in
+  the first comment" on seven). Each piece passes alone. Read all titles,
+  all first lines and all headings as one list, and vary any shape that
+  repeats.
+- **ISO dates in prose.** "On 2026-11-09 the minutes ran out" reads as
+  machine output. Write "On November 9, 2026". Keep ISO dates in front
+  matter, code, logs and data tables.
+
 The full catalogue, grouped by source and model with citations, is in
 [`references/ai-phrases.md`](references/ai-phrases.md). Read it when a
 review needs the source of a pattern or a tell not listed here.
